@@ -3,6 +3,12 @@
 
 typedef int elem_t;
 
-const size_t Def_Capacity = 8;
+const unsigned int Def_Capacity = 8;
+
+const int Up_Mode = 1;
+
+const int Down_Mode = 2;
+
+const int Multiplier = 2;
 
 #endif

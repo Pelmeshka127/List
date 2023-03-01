@@ -3,12 +3,24 @@
 
 int main(void)
 {
-    list_s * header = List_Ctor();
+    list_s * header = { };
 
-    List_Insert_Front(header, 4);
-    List_Insert_Front(header, 10);
-    List_Insert_After(header, 1, 20);
-    List_Insert_After(header, 3, 58);
+    header = (list_s *) calloc(1, sizeof(list_s));
+    if (header == nullptr)
+    {
+        fprintf(stderr, "Allocation of the list failed\n");
+        return Alloc_Err;
+    }
+
+    List_Ctor(header, Def_Capacity);
+
+    List_Insert_Front(header, 12);
+    List_Insert_After(header, header->head, 10);
+    List_Insert_After(header, header->tail, 20);
+    List_Insert_After(header, header->head, 30);
+    List_Insert_Before(header, header->tail, 40);
+
+    List_Erase_Node(header, 4);
 
     List_Dtor(header);
 }

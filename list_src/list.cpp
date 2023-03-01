@@ -4,23 +4,23 @@
 
 //---------------------------------------------------------------------------------------------//
 
-list_s * List_Ctor()
+int List_Ctor(list_s * const header, unsigned int capacity = Def_Capacity)
 {
-    list_s * header = (list_s *)calloc (1, sizeof(list_s));
-
-    if (header == nullptr)
-        return nullptr;
-    
-    header->capacity = Def_Capacity;
+    header->capacity = capacity;
     header->size = 0;
     header->head = 0;
     header->tail = 0;
     header->free = 1;
+    
+    header->is_sorted = true;
 
-    header->node = (list_node *)calloc (Def_Capacity + 1, sizeof(list_node));
+    header->node = (list_node *)calloc (header->capacity + 1, sizeof(list_node));
 
     if (header->node == nullptr)
-        return nullptr;
+    {
+        fprintf(stderr, "Allocation of the list array failed\n");
+        return Alloc_Err;
+    }
 
     for (size_t node_idx = 1; node_idx <= header->capacity; node_idx++)
     {
@@ -33,11 +33,9 @@ list_s * List_Ctor()
 
     LIST_VERIFICATE(header);
 
-#ifdef LIST_CONSOLE_DUMP
     List_Console_Dump(header);
-#endif
 
-    return header;
+    return No_Error;
 }
 
 //---------------------------------------------------------------------------------------------//
@@ -46,18 +44,28 @@ int List_Insert_Front(list_s * const header, elem_t value)
 {
     assert(header);
 
-    size_t cur_idx = header->free;
-    header->free   = (size_t) header->node[cur_idx].next;
+    if (header->size == header->capacity)
+    {
+        if (List_Realloc(header, Up_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return  Alloc_Err;
+        }   
+        List_Console_Dump(header);
+    }
+
+    int cur_idx   = header->free;   
+    header->free  = header->node[cur_idx].next;
 
     header->node[cur_idx].data = value;
     header->node[cur_idx].next = 0;
-    header->node[cur_idx].prev = (int) header->tail;
+    header->node[cur_idx].prev = header->tail;
 
     if (header->head == 0)
         header->head = cur_idx;
 
     if (header->tail != 0)
-        header->node[header->tail].next = (int) cur_idx;
+        header->node[header->tail].next = cur_idx;
     
     header->tail = cur_idx;
 
@@ -65,9 +73,7 @@ int List_Insert_Front(list_s * const header, elem_t value)
 
     LIST_VERIFICATE(header);
 
-#ifdef LIST_CONSOLE_DUMP
     List_Console_Dump(header);
-#endif
 
     return No_Error;
 }
@@ -78,15 +84,25 @@ int List_Insert_Back(list_s * const header, elem_t value)
 {
     assert(header);
 
-    size_t cur_idx = header->free;
-    header->free   = (size_t) header->node[cur_idx].next;
+    if (header->size == header->capacity)
+    {
+        if (List_Realloc(header, Up_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return  Alloc_Err;
+        }   
+        List_Console_Dump(header);
+    }
+
+    int cur_idx  = header->free;
+    header->free = header->node[cur_idx].next;
 
     header->node[cur_idx].data = value;
-    header->node[cur_idx].next = (int) header->head;
+    header->node[cur_idx].next = header->head;
     header->node[cur_idx].prev = 0;
 
     if (header->head != 0)
-        header->node[header->head].prev = (int) cur_idx;
+        header->node[header->head].prev = cur_idx;
     
     header->head = cur_idx;
 
@@ -97,119 +113,63 @@ int List_Insert_Back(list_s * const header, elem_t value)
 
     LIST_VERIFICATE(header);
 
-#ifdef LIST_CONSOLE_DUMP
     List_Console_Dump(header);
-#endif
 
     return No_Error;
 }
 
 //---------------------------------------------------------------------------------------------//
 
-int List_Insert_After(list_s * const header, size_t index, int value)
+int List_Insert_After(list_s * const header, int index, elem_t value)
 {
     assert(header);
-    assert(index);
     assert(value);
-
-    if (index > header->capacity)
-    {
-        fprintf(stderr, "Incorrect index %zu. It's bigger than capacity of list %zu.\n", index, header->capacity);
-        return Incorrect_Index;
-    }
-
-    if (header->size == header->capacity)
-    {
-        fprintf(stderr, "You cannot insert any more. Size %zu = Capacity %zu\n", header->size, header->capacity);
-        return Overflow;
-    }
 
     if (header->size == 0)
     {
-        fprintf(stderr, "You cannot insert after index %zu because the list is empty\n", index);
+        fprintf(stderr, "You cannot insert after index %d because the list is empty\n", index);
         return Empty;
     }
 
-    if (header->size != 0 && index == header->tail)
-        List_Insert_Front(header, value);
-
-    else if (header->node[index].data == 0)
-        List_Insert_Front(header, value);
-
-    else
+    if (index <= 0 || (unsigned int) index > header->capacity)
     {
-        size_t inserting_index = header->free;
-        header->free = (size_t) header->node[header->free].next;
-
-        header->node[inserting_index].data = value;
-        header->node[inserting_index].next = header->node[index].next;
-        header->node[inserting_index].prev = (int) index;
-
-        header->node[header->node[index].next].prev = (int) inserting_index;
-        header->node[index].next = (int) inserting_index;
-
-        header->size++;
-        
-
-    #ifdef LIST_CONSOLE_DUMP
-        List_Console_Dump(header);
-    #endif
-    }
-
-    LIST_VERIFICATE(header);
-
-    return No_Error;
-}
-
-//---------------------------------------------------------------------------------------------//
-
-int List_Insert_Before(list_s * const header, size_t index, int value)
-{
-    assert(header);
-    assert(index);
-    assert(value);
-
-    if (index > header->capacity)
-    {
-        fprintf(stderr, "Incorrect index %zu. The capacity is %zu\n", index, header->capacity);
+        fprintf(stderr, "Incorrect index %d. The capacity of the list is %u.\n", index, header->capacity);
         return Incorrect_Index;
     }
 
     if (header->size == header->capacity)
     {
-        fprintf(stderr, "You cannot insert any more. Size %zu = Capacity %zu\n", header->size, header->capacity);
-        return Overflow;
+        if (List_Realloc(header, Up_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return Alloc_Err;
+        }
+        List_Console_Dump(header);
     }
 
     if (header->size == 0)
-    {
-        fprintf(stderr, "You cannot insert before index %zu because the list is empty\n", index);
-        return Empty;   
-    }
+        List_Insert_Front(header, value);
 
-    if (header->size != 0 && index == header->head)
-        List_Insert_Back(header, value);
-
-    else if (header->size == 0)
-        List_Insert_Back(header, value);
+    else if (header->size != 0 && index == header->tail)
+        List_Insert_Front(header, value);
 
     else
     {
-        size_t inserting_index = header->free;
-        header->free = (size_t) header->node[header->free].next;
+        int inserting_index = header->free;
+        header->free        = header->node[header->free].next;
 
         header->node[inserting_index].data = value;
-        header->node[inserting_index].next = (int) index;
-        header->node[inserting_index].prev = header->node[index].prev;
+        header->node[inserting_index].next = header->node[index].next;
+        header->node[inserting_index].prev = index;
 
-        header->node[header->node[index].prev].next = (int) inserting_index;
-        header->node[index].prev = (int) inserting_index;
+        header->node[header->node[index].next].prev = inserting_index;
+        header->node[index].next                    = inserting_index;
 
         header->size++;
 
-    #ifdef LIST_CONSOLE_DUMP
+        header->is_sorted = false;
+        
         List_Console_Dump(header);
-    #endif
     }
 
     LIST_VERIFICATE(header);
@@ -219,7 +179,48 @@ int List_Insert_Before(list_s * const header, size_t index, int value)
 
 //---------------------------------------------------------------------------------------------//
 
-int List_Erase_Node(list_s * const header, size_t index)
+int List_Insert_Before(list_s * const header, int index, elem_t value)
+{
+    assert(header);
+    assert(value);
+
+    if (header->size == 0)
+    {
+        fprintf(stderr, "You cannot insert after index %d because the list is empty\n", index);
+        return Empty;
+    }
+
+    if (index <= 0 || (unsigned int) index > header->capacity)
+    {
+        fprintf(stderr, "Incorrect index %d. The capacity of the list is %u.\n", index, header->capacity);
+        return Incorrect_Index;
+    }
+
+    if (header->size == header->capacity)
+    {
+        if (List_Realloc(header, Up_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return Alloc_Err;
+        }
+        List_Console_Dump(header);
+    }
+
+    if (header->size == 0)
+        List_Insert_Back(header, value);
+
+    else if (header->size != 0 && index == header->head)
+        List_Insert_Back(header, value);
+
+    else
+        List_Insert_After(header, header->node[index].prev, value);
+
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int List_Erase_Node(list_s * const header, int index)
 {
     assert(header);
     assert(index);
@@ -230,47 +231,27 @@ int List_Erase_Node(list_s * const header, size_t index)
         return Underflow;
     }
 
-    if (index > header->capacity)
+    if (index <= 0 || (unsigned int)index > header->capacity)
     {
-        fprintf(stderr, "Incorrect index %zu. Capacity is %zu\n", index, header->capacity);
+        fprintf(stderr, "Incorrect index %du. Capacity is %u\n", index, header->capacity);
         return Incorrect_Index;
     }
 
-    if (index == header->head)
+    if (header->size * 4 <= header->capacity)
     {
-        header->head = (size_t) header->node[index].next;
-        header->node[header->node[index].next].prev = 0;
-
-        header->node[index].data = 0;
-        header->node[index].next = (int) header->free;
-        header->node[index].prev = Poison;
-
-        header->free = index;
-
-        header->size--;
-
-    #ifdef LIST_CONSOLE_DUMP
+        if (List_Realloc(header, Down_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return Alloc_Err;
+        }
         List_Console_Dump(header);
-    #endif
     }
+
+    if (index == header->head)
+        List_Erase_Head(header);
 
     else if (index == header->tail)
-    {
-        header->tail = (size_t) header->node[index].prev;
-        header->node[header->node[index].prev].next = 0;
-
-        header->node[index].data = 0;
-        header->node[index].next = (int) header->free;
-        header->node[index].prev = Poison;
-
-        header->free = index;
-
-        header->size--;
-
-    #ifdef LIST_CONSOLE_DUMP
-        List_Console_Dump(header);
-    #endif
-    }
+        List_Erase_Tail(header);
 
     else
     {
@@ -278,16 +259,16 @@ int List_Erase_Node(list_s * const header, size_t index)
         header->node[header->node[index].next].prev = header->node[index].prev;
 
         header->node[index].data = 0;
-        header->node[index].next = (int) header->free;
+        header->node[index].next = header->free;
         header->node[index].prev = Poison;
 
         header->free = index;
 
+        header->is_sorted = false;
+
         header->size--;
 
-    #ifdef LIST_CONSOLE_DUMP
         List_Console_Dump(header);
-    #endif
     }
 
     LIST_VERIFICATE(header);
@@ -297,14 +278,161 @@ int List_Erase_Node(list_s * const header, size_t index)
 
 //---------------------------------------------------------------------------------------------//
 
+int List_Erase_Head(list_s * const header)
+{
+    assert(header);
+
+    int old_head = header->head;
+    header->head = header->node[old_head].next;
+
+    header->node[header->node[old_head].next].prev = 0;
+
+    header->node[old_head].data = 0;
+    header->node[old_head].next = header->free;
+    header->node[old_head].prev = Poison;
+
+    header->free = old_head;
+
+    header->size--;
+
+    List_Console_Dump(header);
+
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int List_Erase_Tail(list_s * const header)
+{
+    assert(header);
+
+    int old_tail = header->tail;
+    header->tail = header->node[old_tail].prev;
+
+    header->node[header->node[old_tail].prev].next = 0;
+
+    header->node[old_tail].data = 0;
+    header->node[old_tail].next = header->free;
+    header->node[old_tail].prev = Poison;
+
+    header->free = old_tail;
+
+    header->size--;
+
+    List_Console_Dump(header);
+
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int List_Realloc(list_s * const header, int mode)            
+{
+    assert(header);
+    int old_capacity = (int) header->capacity;
+
+    if (mode == Up_Mode)
+    {
+        header->capacity = header->capacity * Multiplier;
+        header->node = (list_node *)realloc (header->node, (header->capacity + 1) * sizeof(list_node));
+        if (header->node == nullptr)
+        {
+            fprintf(stderr, "Reallocation of the list failed\n");
+            return Alloc_Err;
+        }
+        
+        header->free = old_capacity + 1;
+
+        for (int node_idx = old_capacity + 1; node_idx <= (int) header->capacity; node_idx++)
+        {
+            header->node[node_idx].data = 0;
+            header->node[node_idx].next = node_idx + 1;
+            header->node[node_idx].prev = Poison;
+        }
+
+        printf("ReAllocation: new capacity is %u\n", header->capacity);
+    }
+
+    else if (mode == Down_Mode)
+    {
+        header->capacity = header->capacity / Multiplier;
+        header->node = (list_node *)realloc (header->node, (header->capacity + 1) * sizeof(list_node));
+        if (header->node == nullptr)
+        {
+            fprintf(stderr, "Reallocation of the list failed\n");
+            return Alloc_Err;
+        }
+
+        printf("ReAllocation: new capacity is %u\n", header->capacity);
+    }
+
+    else
+    {
+        fprintf(stderr, "Mode of the reallocation %d is undefined\n", mode);
+        return Alloc_Err;
+    }
+
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int List_Get_Phys_By_Log(list_s * const header, int my_log_index)
+{
+    assert(header);
+
+    if (my_log_index <= 0 || my_log_index > (int) header->size)
+    {
+        fprintf(stderr, "Incorrect index %d in function %s\n", my_log_index, __PRETTY_FUNCTION__);
+        return Incorrect_Index;
+    }
+
+    int cur_idx = header->head;
+    int log_idx = 1;
+
+    while (log_idx < my_log_index)
+    {
+        cur_idx = header->node[cur_idx].next;
+        log_idx++;
+    }
+
+    return cur_idx;
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int List_Get_Log_By_Phys(list_s * const header, int my_phys_index)
+{
+    assert(header);
+
+    if (my_phys_index < 0 || my_phys_index > (int) header->size)
+    {
+        fprintf(stderr, "Incorrect index %d in function %s\n", my_phys_index, __PRETTY_FUNCTION__);
+        return Incorrect_Index;
+    }
+
+    int cur_idx = header->head;
+    int log_idx = 1;
+
+    while (cur_idx != my_phys_index)
+    {
+        cur_idx = header->node[cur_idx].next;
+        log_idx++;
+    }
+
+    return log_idx;
+}
+
+//---------------------------------------------------------------------------------------------//
+
 void List_Dtor(list_s * const header)
 {
     assert(header);
 
-    size_t max_size = header->size;
+    unsigned int max_size = header->size;
 
-    for (size_t i = 1; i <= max_size; i++)
-        List_Erase_Node(header, header->tail);
+    for (unsigned int i = 1; i <= max_size; i++)
+        List_Erase_Tail(header);
 
     header->capacity = 0;
     header->free     = 0;
