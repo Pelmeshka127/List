@@ -20,7 +20,8 @@ int main(void)
     List_Insert_After(header, header->head, 30);
     List_Insert_Before(header, header->tail, 40);
 
-    List_Erase_Node(header, 4);
+    List_Linearize(header);
+    List_Console_Dump(header);
 
     List_Dtor(header);
 }

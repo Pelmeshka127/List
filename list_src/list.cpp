@@ -425,6 +425,67 @@ int List_Get_Log_By_Phys(list_s * const header, int my_phys_index)
 
 //---------------------------------------------------------------------------------------------//
 
+int List_Linearize(list_s * const header)
+{
+    assert(header);
+
+    if (header->size <= 1)
+    {
+        fprintf(stderr, "List is empty in function %s\n", __PRETTY_FUNCTION__);
+        return Empty;
+    }
+
+    list_node * new_node = (list_node *)calloc (header->capacity + 1, sizeof(list_node));
+    if (new_node == nullptr)
+    {
+        fprintf(stderr, "Allocation of new list in %s failed\n", __PRETTY_FUNCTION__);
+        return Alloc_Err;
+    }
+
+    header->node[header->tail].next = header->free;
+
+    header->free = 0;
+    header->head = 1;
+    header->tail = header->size;
+    header->is_sorted = true;
+
+    new_node[0].data = 0;
+    new_node[0].next = 0;
+    new_node[0].prev = 0;
+
+    int old_node_idx = 1;
+
+    for (int new_node_idx = 1; new_node_idx <= header->capacity; new_node_idx++)
+    {
+        if (header->node[old_node_idx].prev == Poison)
+        {
+            if (header->free == 0)
+                header->free = new_node_idx;
+
+            new_node[new_node_idx].prev = Poison;
+            new_node[new_node_idx].next = (new_node_idx + 1) % (header->capacity + 1);
+        }
+
+        else
+        {
+            new_node[new_node_idx].data = header->node[old_node_idx].data;
+            new_node[new_node_idx].next = (new_node_idx + 1) % (header->capacity + 1);
+            new_node[new_node_idx].prev = new_node_idx - 1;
+        }
+
+        old_node_idx = header->node[old_node_idx].next;
+    }
+
+    free(header->node);
+
+    header->node = new_node;
+    header->node[header->tail].next = 0;
+
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
 void List_Dtor(list_s * const header)
 {
     assert(header);

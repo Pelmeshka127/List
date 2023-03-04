@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "listconfig.h"
-
+ 
 const elem_t Poison = -1;
 
 struct list_node {
