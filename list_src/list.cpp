@@ -34,6 +34,7 @@ int List_Ctor(list_s * const header, unsigned int capacity = Def_Capacity)
     LIST_VERIFICATE(header);
 
     List_Console_Dump(header);
+    List_Graph_Dump(header);
 
     return No_Error;
 }
@@ -74,6 +75,7 @@ int List_Insert_Front(list_s * const header, elem_t value)
     LIST_VERIFICATE(header);
 
     List_Console_Dump(header);
+    List_Graph_Dump(header);
 
     return No_Error;
 }
@@ -114,6 +116,7 @@ int List_Insert_Back(list_s * const header, elem_t value)
     LIST_VERIFICATE(header);
 
     List_Console_Dump(header);
+    List_Graph_Dump(header);
 
     return No_Error;
 }
@@ -145,6 +148,7 @@ int List_Insert_After(list_s * const header, int index, elem_t value)
             return Alloc_Err;
         }
         List_Console_Dump(header);
+        List_Graph_Dump(header);
     }
 
     if (header->size == 0)
@@ -170,6 +174,7 @@ int List_Insert_After(list_s * const header, int index, elem_t value)
         header->is_sorted = false;
         
         List_Console_Dump(header);
+        List_Graph_Dump(header);
     }
 
     LIST_VERIFICATE(header);
@@ -204,6 +209,7 @@ int List_Insert_Before(list_s * const header, int index, elem_t value)
             return Alloc_Err;
         }
         List_Console_Dump(header);
+        List_Graph_Dump(header);
     }
 
     if (header->size == 0)
@@ -237,7 +243,7 @@ int List_Erase_Node(list_s * const header, int index)
         return Incorrect_Index;
     }
 
-    if (header->size * 4 <= header->capacity)
+    if (header->size  <= header->capacity / 4)
     {
         if (List_Realloc(header, Down_Mode) == Alloc_Err)
         {
@@ -245,6 +251,7 @@ int List_Erase_Node(list_s * const header, int index)
             return Alloc_Err;
         }
         List_Console_Dump(header);
+        List_Graph_Dump(header);
     }
 
     if (index == header->head)
@@ -269,6 +276,7 @@ int List_Erase_Node(list_s * const header, int index)
         header->size--;
 
         List_Console_Dump(header);
+        List_Graph_Dump(header);
     }
 
     LIST_VERIFICATE(header);
@@ -281,6 +289,17 @@ int List_Erase_Node(list_s * const header, int index)
 int List_Erase_Head(list_s * const header)
 {
     assert(header);
+
+    if (header->size  <= header->capacity / 4)
+    {
+        if (List_Realloc(header, Down_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return Alloc_Err;
+        }
+        List_Console_Dump(header);
+        List_Graph_Dump(header);
+    }
 
     int old_head = header->head;
     header->head = header->node[old_head].next;
@@ -296,6 +315,7 @@ int List_Erase_Head(list_s * const header)
     header->size--;
 
     List_Console_Dump(header);
+    List_Graph_Dump(header);
 
     return No_Error;
 }
@@ -305,6 +325,17 @@ int List_Erase_Head(list_s * const header)
 int List_Erase_Tail(list_s * const header)
 {
     assert(header);
+
+    if (header->size  <= header->capacity / 4)
+    {
+        if (List_Realloc(header, Down_Mode) == Alloc_Err)
+        {
+            fprintf(stderr, "In function %s reallocation failed\n", __PRETTY_FUNCTION__);
+            return Alloc_Err;
+        }
+        List_Console_Dump(header);
+        List_Graph_Dump(header);
+    }
 
     int old_tail = header->tail;
     header->tail = header->node[old_tail].prev;
@@ -320,6 +351,7 @@ int List_Erase_Tail(list_s * const header)
     header->size--;
 
     List_Console_Dump(header);
+    List_Graph_Dump(header);
 
     return No_Error;
 }
@@ -446,7 +478,7 @@ int List_Linearize(list_s * const header)
 
     header->free = 0;
     header->head = 1;
-    header->tail = header->size;
+    header->tail = (int) header->size;
     header->is_sorted = true;
 
     new_node[0].data = 0;
@@ -455,7 +487,7 @@ int List_Linearize(list_s * const header)
 
     int old_node_idx = 1;
 
-    for (int new_node_idx = 1; new_node_idx <= header->capacity; new_node_idx++)
+    for (int new_node_idx = 1; new_node_idx <= (int) header->capacity; new_node_idx++)
     {
         if (header->node[old_node_idx].prev == Poison)
         {
@@ -463,13 +495,13 @@ int List_Linearize(list_s * const header)
                 header->free = new_node_idx;
 
             new_node[new_node_idx].prev = Poison;
-            new_node[new_node_idx].next = (new_node_idx + 1) % (header->capacity + 1);
+            new_node[new_node_idx].next = (new_node_idx + 1) % ((int) header->capacity + 1);
         }
 
         else
         {
             new_node[new_node_idx].data = header->node[old_node_idx].data;
-            new_node[new_node_idx].next = (new_node_idx + 1) % (header->capacity + 1);
+            new_node[new_node_idx].next = (new_node_idx + 1) % ((int) header->capacity + 1);
             new_node[new_node_idx].prev = new_node_idx - 1;
         }
 
@@ -480,6 +512,9 @@ int List_Linearize(list_s * const header)
 
     header->node = new_node;
     header->node[header->tail].next = 0;
+
+    List_Console_Dump(header);
+    List_Graph_Dump(header);
 
     return No_Error;
 }

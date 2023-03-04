@@ -19,9 +19,10 @@ int main(void)
     List_Insert_After(header, header->tail, 20);
     List_Insert_After(header, header->head, 30);
     List_Insert_Before(header, header->tail, 40);
-
     List_Linearize(header);
-    List_Console_Dump(header);
-
+    List_Insert_Front(header, 70);
+    List_Insert_Front(header, 70);
+    List_Insert_Front(header, 70);
+    List_Insert_Front(header, 70);
     List_Dtor(header);
 }

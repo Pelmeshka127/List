@@ -36,6 +36,7 @@ enum Error {
     Tail_Error      = 7,
     Head_Error      = 8,
     Free_Error      = 9,
+    File_Error      = 10,
 };
 
 
@@ -120,10 +121,17 @@ int List_Get_Phys_By_Log(list_s * const header, int my_log_index);
 
 //---------------------------------------------------------------------------------------------//
 
+/// @brief 
+/// @param header 
+/// @param my_phys_index 
+/// @return 
 int List_Get_Log_By_Phys(list_s * const header, int my_phys_index);
 
 //---------------------------------------------------------------------------------------------//
 
+/// @brief 
+/// @param header 
+/// @return 
 int List_Linearize(list_s * const header);
 
 //---------------------------------------------------------------------------------------------//

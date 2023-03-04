@@ -1,0 +1,16 @@
+digraph List
+{
+  rankdir = LR;
+  node[fontsize=14];
+  edge[color="black",fontcolor="blue",fontsize=12];
+  header[shape = Mrecord, style = filled, fillcolor = "lightgoldenrod",label = " <head> Head = 1 | <tail> Tail = 0 | <free> Free = 1 | <size> Size = 0 | Is_List_Sorted: YES"];
+  node0  -> node1[color = "webgray", style = "dashed"];
+  node0 -> node0 [color = "webgray", style = "dashed"];
+  node0[shape = Mrecord, style = filled,label = " <index> index = 0 | data = 0 | <next_idx> next = 0 | <prev_idx> prev = 0",fillcolor = "#FFD0D0"];
+  node1[shape = Mrecord, style = filled,label = " <index> index = 1 | data = 0 | <next_idx> next = 2 | <prev_idx> prev = -1",fillcolor = "skyblue"];
+  node2[shape = Mrecord, style = filled,label = " <index> index = 2 | data = 0 | <next_idx> next = 3 | <prev_idx> prev = -1",fillcolor = "skyblue"];
+  node1 : <next_idx> -> node2 : <next_idx>[color = "blueviolet"];
+  header : <head> -> node1 : <index>;
+  header : <tail> -> node0 : <index>;
+  header : <free> -> node1 : <index>;
+}
