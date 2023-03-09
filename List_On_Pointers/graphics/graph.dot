@@ -1,0 +1,20 @@
+digraph G {
+  rankdir = LR;
+  splines = polyline;
+  node[fontsize=14];
+  edge[color="black",fontcolor="blue",fontsize=12];
+  node1[shape = Mrecord, style = filled,label = " <index> adress = 0x105001fc0 | data = 5 | <next_idx> next = 0x105001f90 | <prev_idx> prev = 0x0",fillcolor = "#FFD0D0"];
+  node2[shape = Mrecord, style = filled,label = " <index> adress = 0x105001f90 | data = 6 | <next_idx> next = 0x105001f00 | <prev_idx> prev = 0x105001fc0",fillcolor = "#FFD0D0"];
+  node3[shape = Mrecord, style = filled,label = " <index> adress = 0x105001f00 | data = 9 | <next_idx> next = 0x105001f60 | <prev_idx> prev = 0x105001f90",fillcolor = "#FFD0D0"];
+  node4[shape = Mrecord, style = filled,label = " <index> adress = 0x105001f60 | data = 7 | <next_idx> next = 0x0 | <prev_idx> prev = 0x105001f00",fillcolor = "#FFD0D0"];
+  node2 : <next_idx> -> node3 : <next_idx> [color="green"];
+  node2 : <prev_idx> -> node1 : <prev_idx> [color="red"];
+  node3 : <next_idx> -> node4 : <next_idx> [color="green"];
+  node3 : <prev_idx> -> node2 : <prev_idx> [color="red"];
+  node1 : <next_idx> -> node2 : <next_idx> [color="green"];
+  node4 : <prev_idx> -> node3 : <prev_idx> [color="red"];
+  head[shape = Mrecord, style = filled, fillcolor = lightgoldenrod, label = " Head adress = 0x105001fc0 "];
+  head -> node1 : <index> ;
+  tail[shape = Mrecord, style = filled, fillcolor = lightskyblue, label = " Tail adress = 0x105001f60 "];
+  tail -> node4 : <index> ;
+}
