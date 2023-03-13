@@ -3,26 +3,23 @@
 
 int main(void)
 {
-    list_s * header = { };
+    list_s header = { }; //* ->
 
-    header = (list_s *) calloc(1, sizeof(list_s));
-    if (header == nullptr)
-    {
-        fprintf(stderr, "Allocation of the list failed\n");
-        return Alloc_Err;
-    }
+    Open_File();
 
-    List_Ctor(header, Def_Capacity);
+    List_Ctor(&header, Def_Capacity);
 
-    List_Insert_Front(header, 12);
-    List_Insert_After(header, header->head, 10);
-    List_Insert_After(header, header->tail, 20);
-    List_Insert_After(header, header->head, 30);
-    List_Insert_Before(header, header->tail, 40);
-    List_Linearize(header);
-    List_Insert_Front(header, 70);
-    List_Insert_Front(header, 70);
-    List_Insert_Front(header, 70);
-    List_Insert_Front(header, 70);
-    List_Dtor(header);
+    List_Insert_Front(&header, 12);
+
+    List_Insert_Front(&header, 24);
+
+    List_Insert_After(&header, header.head, 10);
+
+    List_Insert_After(&header, 2, 32);
+
+    printf("%d\n", List_Get_Log_By_Data(&header, 12));
+
+    List_Dtor(&header);
+
+    Close_File();
 }

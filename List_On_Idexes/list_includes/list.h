@@ -15,8 +15,8 @@ struct list_node {
 };
 
 struct list_s {
-    unsigned int capacity;
-    unsigned int size;
+    int capacity;
+    int size;
     int head;
     int tail;
     int free;
@@ -26,17 +26,19 @@ struct list_s {
 };
 
 enum Error {
-    No_Error        = 0,
-    Alloc_Err       = 1,
-    Overflow        = 2,
-    Underflow       = 3,
-    Empty           = 4,
-    Incorrect_Index = 5,
-    Zero_Elem_Error = 6,
-    Tail_Error      = 7,
-    Head_Error      = 8,
-    Free_Error      = 9,
-    File_Error      = 10,
+    No_Error            = 0,
+    Alloc_Err           = 1,
+    Overflow            = 2,
+    Underflow           = 3,
+    Empty               = 4,
+    Incorrect_Index     = 5,
+    Zero_Elem_Error     = 6,
+    Tail_Error          = 7,
+    Head_Error          = 8,
+    Free_Error          = 9,
+    File_Error          = 10,
+    Incorrect_Capacity  = 11,
+    Ruined_List         = 12,
 };
 
 
@@ -46,7 +48,7 @@ enum Error {
 /// @param header is ptr on the list struct
 /// @param Capacity is given capacity of the list
 /// @return Alloc_Err if initialsing falied, No_Error if it's ok
-int List_Ctor(list_s * const header, unsigned int Capacity);
+int List_Ctor(list_s * const header, int Capacity);
 
 //---------------------------------------------------------------------------------------------//
 
@@ -113,25 +115,33 @@ int List_Realloc(list_s * const header, int mode);
 
 //---------------------------------------------------------------------------------------------//
 
-/// @brief 
-/// @param header 
-/// @param index 
-/// @return 
+/// @brief Function finds out the physical index of the node by logical index
+/// @param header is ptr on the list struct
+/// @param index is the logical index of our node
+/// @return the physical index of the node
 int List_Get_Phys_By_Log(list_s * const header, int my_log_index);
 
 //---------------------------------------------------------------------------------------------//
 
-/// @brief 
-/// @param header 
-/// @param my_phys_index 
-/// @return 
+/// @brief Function finds out the logical index of the node by physical index
+/// @param header is ptr on the list struct
+/// @param my_phys_index is the physical index of the our node
+/// @return the logical index of the node
 int List_Get_Log_By_Phys(list_s * const header, int my_phys_index);
 
 //---------------------------------------------------------------------------------------------//
 
-/// @brief 
-/// @param header 
-/// @return 
+/// @brief Function finds out the logical index of the node by value in this node
+/// @param header is ptr on the list struct
+/// @param my_log_index is the logical index of the our node
+/// @return the value of logical index of the node
+int List_Get_Log_By_Data(list_s * const header, int value);
+
+//---------------------------------------------------------------------------------------------//
+
+/// @brief Function sorts list so logical and physical orders are equal
+/// @param header is ptr on the struct node
+/// @return sorted list
 int List_Linearize(list_s * const header);
 
 //---------------------------------------------------------------------------------------------//
@@ -141,4 +151,17 @@ int List_Linearize(list_s * const header);
 void List_Dtor(list_s * const header);
 
 //---------------------------------------------------------------------------------------------//
+
+/// @brief Function opens log file of the list
+/// @return File_Error is file wasn't open, No_Error if it's ok
+int Open_File();
+
+//---------------------------------------------------------------------------------------------//
+
+/// @brief Function closes log file of the list
+/// @return File_Error if file wasn't closed, No_Error if it's ok
+int Close_File();
+
+//---------------------------------------------------------------------------------------------//
+
 #endif

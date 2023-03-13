@@ -4,6 +4,10 @@
 
 #include "../list_includes/dump.h"
 
+    static int graph_num = 1;
+
+//---------------------------------------------------------------------------------------------//
+
 void List_Console_Dump(list_s * const header)
 {
     #ifdef LIST_CONSOLE_DUMP
@@ -35,12 +39,49 @@ void List_Console_Dump(list_s * const header)
     #endif
 }
 
+//---------------------------------------------------------------------------------------------//
+
+int List_Dump(list_s * const header, FILE * log_file)
+{
+    assert(header);
+
+    fprintf(log_file, "<pre>\n");
+
+    fprintf(log_file, "The capacity of the list is %d\n", header->capacity);
+    fprintf(log_file, "The size of the list is %d\n", header->size);
+    fprintf(log_file, "The index of the head is %d\n", header->head);
+    fprintf(log_file, "The index of the tail is %d\n", header->tail);
+    fprintf(log_file, "The index of the free node is %d\n", header->free);
+
+    fprintf(log_file, "Index: ");
+    for (int index = 0; index <= header->capacity; index++)
+        fprintf(log_file, " %d ", index);
+
+    fprintf(log_file, "\nData: ");
+    for (int index = 0; index <= header->capacity; index++)
+        fprintf(log_file, " %d ", header->node[index].data);
+        
+    fprintf(log_file, "\nNext: ");
+    for (int index = 0; index <= header->capacity; index++)
+        fprintf(log_file, " %d ", header->node[index].next);
+
+    fprintf(log_file, "\nPrev: ");
+    for (int index = 0; index <= header->capacity; index++)
+        fprintf(log_file, " %d ", header->node[index].prev);
+        
+    List_Graph_Dump(header);
+    fprintf(log_file, "\n<image src = \"gpaph%d.png\" /image>\n\n\n", graph_num - 1);
+
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
 int List_Graph_Dump(list_s * const header)
 {
     #ifdef LIST_GRAPH_DUMP
 
     assert(header);
-    static int graph_num = 1;
 
     FILE * graph_file = fopen("graphics/graph.dot", "w");
     if (graph_file == nullptr)
@@ -51,8 +92,8 @@ int List_Graph_Dump(list_s * const header)
 
     fprintf(graph_file, "digraph List\n{\n");
     fprintf(graph_file, "  rankdir = LR;\n");
-    fprintf(graph_file, "  splines = ortho;\n");
-    fprintf(graph_file, "  ranksep = 2;\n");
+    //fprintf(graph_file, "  splines = polyline;\n");
+    //fprintf(graph_file, "  ranksep = 2;\n");
     fprintf(graph_file, "  node[fontsize=14];\n  edge[color=\"black\",fontcolor=\"blue\",fontsize=12];\n");
     fprintf(graph_file, "  header[shape = Mrecord, style = filled, fillcolor = \"lightgoldenrod\","
                         "label = \" <head> Head = %d | <tail> Tail = %d | <free> Free = %d | <size> Size = %d | Is_List_Sorted: %s\"];\n",
@@ -61,7 +102,7 @@ int List_Graph_Dump(list_s * const header)
     fprintf(graph_file, "  node0  -> node%d[color = \"webgray\", style = \"dashed\"];\n", header->head);
     fprintf(graph_file, "  node%d -> node0 [color = \"webgray\", style = \"dashed\"];\n", header->tail);
 
-    for (int index = 0; index <= (int) header->capacity; index++)
+    for (int index = 0; index <= header->capacity; index++)
     {
         fprintf(graph_file, "  node%d[shape = Mrecord, style = filled," 
                             "label = \" <index> index = %d | data = %d | <next_idx> next = %d | <prev_idx> prev = %d\"," 
@@ -70,7 +111,7 @@ int List_Graph_Dump(list_s * const header)
                             header->node[index].prev, header->node[index].prev != Poison ? "\"#FFD0D0\"" : "\"skyblue\"");
     }
 
-    for (int index = 1; index < (int) header->capacity; index++)
+    for (int index = 1; index < header->capacity; index++)
     {
         if (header->node[index].prev != Poison)
         {
@@ -102,12 +143,16 @@ int List_Graph_Dump(list_s * const header)
     char call_graph[100] = " ";
 
     sprintf(call_graph, "dot graphics/graph.dot -Tpng -o graphics/gpaph%d.png", graph_num);
-
-    graph_num++;
     
     system(call_graph);
+
+    //2 ружима (log and phys)
+
+    graph_num++;
 
     #endif
 
     return No_Error;
 }
+
+//---------------------------------------------------------------------------------------------//

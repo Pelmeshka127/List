@@ -4,8 +4,18 @@
 
 //---------------------------------------------------------------------------------------------//
 
-int List_Ctor(list_s * const header, unsigned int capacity = Def_Capacity)
+FILE * log_file = nullptr;
+
+//---------------------------------------------------------------------------------------------//
+
+int List_Ctor(list_s * const header, int capacity = Def_Capacity)
 {
+    if (capacity < 1)
+    {
+        fprintf(stderr, "Incorrect value of the capacity of the list %d\n", capacity);
+        return Incorrect_Capacity;
+    }
+
     header->capacity = capacity;
     header->size = 0;
     header->head = 0;
@@ -14,7 +24,7 @@ int List_Ctor(list_s * const header, unsigned int capacity = Def_Capacity)
     
     header->is_sorted = true;
 
-    header->node = (list_node *)calloc (header->capacity + 1, sizeof(list_node));
+    header->node = (list_node *)calloc ((unsigned int) header->capacity + 1, sizeof(list_node));
 
     if (header->node == nullptr)
     {
@@ -22,9 +32,9 @@ int List_Ctor(list_s * const header, unsigned int capacity = Def_Capacity)
         return Alloc_Err;
     }
 
-    for (size_t node_idx = 1; node_idx <= header->capacity; node_idx++)
+    for (int node_idx = 1; node_idx <= header->capacity; node_idx++)
     {
-        header->node[node_idx].next = int (node_idx + 1);
+        header->node[node_idx].next = node_idx + 1;
         header->node[node_idx].prev = Poison;
         header->node[node_idx].data = 0;
     }
@@ -34,7 +44,7 @@ int List_Ctor(list_s * const header, unsigned int capacity = Def_Capacity)
     LIST_VERIFICATE(header);
 
     List_Console_Dump(header);
-    List_Graph_Dump(header);
+    List_Dump(header, log_file);
 
     return No_Error;
 }
@@ -75,7 +85,7 @@ int List_Insert_Front(list_s * const header, elem_t value)
     LIST_VERIFICATE(header);
 
     List_Console_Dump(header);
-    List_Graph_Dump(header);
+    List_Dump(header, log_file);
 
     return No_Error;
 }
@@ -116,7 +126,7 @@ int List_Insert_Back(list_s * const header, elem_t value)
     LIST_VERIFICATE(header);
 
     List_Console_Dump(header);
-    List_Graph_Dump(header);
+    List_Dump(header, log_file);
 
     return No_Error;
 }
@@ -134,7 +144,7 @@ int List_Insert_After(list_s * const header, int index, elem_t value)
         return Empty;
     }
 
-    if (index <= 0 || (unsigned int) index > header->capacity)
+    if (index <= 0 || index > header->capacity)
     {
         fprintf(stderr, "Incorrect index %d. The capacity of the list is %u.\n", index, header->capacity);
         return Incorrect_Index;
@@ -148,7 +158,7 @@ int List_Insert_After(list_s * const header, int index, elem_t value)
             return Alloc_Err;
         }
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     if (header->size == 0)
@@ -174,7 +184,7 @@ int List_Insert_After(list_s * const header, int index, elem_t value)
         header->is_sorted = false;
         
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     LIST_VERIFICATE(header);
@@ -195,7 +205,7 @@ int List_Insert_Before(list_s * const header, int index, elem_t value)
         return Empty;
     }
 
-    if (index <= 0 || (unsigned int) index > header->capacity)
+    if (index <= 0 || index > header->capacity)
     {
         fprintf(stderr, "Incorrect index %d. The capacity of the list is %u.\n", index, header->capacity);
         return Incorrect_Index;
@@ -209,7 +219,7 @@ int List_Insert_Before(list_s * const header, int index, elem_t value)
             return Alloc_Err;
         }
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     if (header->size == 0)
@@ -237,7 +247,7 @@ int List_Erase_Node(list_s * const header, int index)
         return Underflow;
     }
 
-    if (index <= 0 || (unsigned int)index > header->capacity)
+    if (index <= 0 || index > header->capacity)
     {
         fprintf(stderr, "Incorrect index %du. Capacity is %u\n", index, header->capacity);
         return Incorrect_Index;
@@ -251,7 +261,7 @@ int List_Erase_Node(list_s * const header, int index)
             return Alloc_Err;
         }
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     if (index == header->head)
@@ -276,7 +286,7 @@ int List_Erase_Node(list_s * const header, int index)
         header->size--;
 
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     LIST_VERIFICATE(header);
@@ -298,10 +308,11 @@ int List_Erase_Head(list_s * const header)
             return Alloc_Err;
         }
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     int old_head = header->head;
+
     header->head = header->node[old_head].next;
 
     header->node[header->node[old_head].next].prev = 0;
@@ -315,7 +326,7 @@ int List_Erase_Head(list_s * const header)
     header->size--;
 
     List_Console_Dump(header);
-    List_Graph_Dump(header);
+    List_Dump(header, log_file);
 
     return No_Error;
 }
@@ -334,10 +345,14 @@ int List_Erase_Tail(list_s * const header)
             return Alloc_Err;
         }
         List_Console_Dump(header);
-        List_Graph_Dump(header);
+        List_Dump(header, log_file);
     }
 
     int old_tail = header->tail;
+
+    if (header->size == 1)
+        header->head = 0;
+
     header->tail = header->node[old_tail].prev;
 
     header->node[header->node[old_tail].prev].next = 0;
@@ -351,7 +366,7 @@ int List_Erase_Tail(list_s * const header)
     header->size--;
 
     List_Console_Dump(header);
-    List_Graph_Dump(header);
+    List_Dump(header, log_file);
 
     return No_Error;
 }
@@ -363,10 +378,13 @@ int List_Realloc(list_s * const header, int mode)
     assert(header);
     int old_capacity = (int) header->capacity;
 
+    if (header->is_sorted == false)
+        List_Linearize(header);
+
     if (mode == Up_Mode)
     {
         header->capacity = header->capacity * Multiplier;
-        header->node = (list_node *)realloc (header->node, (header->capacity + 1) * sizeof(list_node));
+        header->node = (list_node *)realloc (header->node, (unsigned int) (header->capacity + 1) * sizeof(list_node));
         if (header->node == nullptr)
         {
             fprintf(stderr, "Reallocation of the list failed\n");
@@ -375,7 +393,7 @@ int List_Realloc(list_s * const header, int mode)
         
         header->free = old_capacity + 1;
 
-        for (int node_idx = old_capacity + 1; node_idx <= (int) header->capacity; node_idx++)
+        for (int node_idx = old_capacity + 1; node_idx <= header->capacity; node_idx++)
         {
             header->node[node_idx].data = 0;
             header->node[node_idx].next = node_idx + 1;
@@ -388,7 +406,7 @@ int List_Realloc(list_s * const header, int mode)
     else if (mode == Down_Mode)
     {
         header->capacity = header->capacity / Multiplier;
-        header->node = (list_node *)realloc (header->node, (header->capacity + 1) * sizeof(list_node));
+        header->node = (list_node *)realloc (header->node, (unsigned int) (header->capacity + 1) * sizeof(list_node));
         if (header->node == nullptr)
         {
             fprintf(stderr, "Reallocation of the list failed\n");
@@ -457,6 +475,27 @@ int List_Get_Log_By_Phys(list_s * const header, int my_phys_index)
 
 //---------------------------------------------------------------------------------------------//
 
+int List_Get_Log_By_Data(list_s * const header, int value)
+{
+    assert(header);
+
+    if (header->is_sorted == false)
+        List_Linearize(header);
+
+    list_node cur_node = header->node[header->head];
+    int log_index = 1;
+
+    while (cur_node.data != value)
+    {
+        log_index++;
+        cur_node = header->node[cur_node.next];
+    }
+
+    return log_index;
+}
+
+//---------------------------------------------------------------------------------------------//
+
 int List_Linearize(list_s * const header)
 {
     assert(header);
@@ -467,7 +506,7 @@ int List_Linearize(list_s * const header)
         return Empty;
     }
 
-    list_node * new_node = (list_node *)calloc (header->capacity + 1, sizeof(list_node));
+    list_node * new_node = (list_node *)calloc ((unsigned int) header->capacity + 1, sizeof(list_node));
     if (new_node == nullptr)
     {
         fprintf(stderr, "Allocation of new list in %s failed\n", __PRETTY_FUNCTION__);
@@ -487,7 +526,7 @@ int List_Linearize(list_s * const header)
 
     int old_node_idx = 1;
 
-    for (int new_node_idx = 1; new_node_idx <= (int) header->capacity; new_node_idx++)
+    for (int new_node_idx = 1; new_node_idx <= header->capacity; new_node_idx++)
     {
         if (header->node[old_node_idx].prev == Poison)
         {
@@ -495,13 +534,13 @@ int List_Linearize(list_s * const header)
                 header->free = new_node_idx;
 
             new_node[new_node_idx].prev = Poison;
-            new_node[new_node_idx].next = (new_node_idx + 1) % ((int) header->capacity + 1);
+            new_node[new_node_idx].next = (new_node_idx + 1) % (header->capacity + 1);
         }
 
         else
         {
             new_node[new_node_idx].data = header->node[old_node_idx].data;
-            new_node[new_node_idx].next = (new_node_idx + 1) % ((int) header->capacity + 1);
+            new_node[new_node_idx].next = (new_node_idx + 1) % (header->capacity + 1);
             new_node[new_node_idx].prev = new_node_idx - 1;
         }
 
@@ -514,7 +553,7 @@ int List_Linearize(list_s * const header)
     header->node[header->tail].next = 0;
 
     List_Console_Dump(header);
-    List_Graph_Dump(header);
+    List_Dump(header, log_file);
 
     return No_Error;
 }
@@ -525,9 +564,9 @@ void List_Dtor(list_s * const header)
 {
     assert(header);
 
-    unsigned int max_size = header->size;
+    int max_size = header->size;
 
-    for (unsigned int i = 1; i <= max_size; i++)
+    for (int i = 1; i <= max_size; i++)
         List_Erase_Tail(header);
 
     header->capacity = 0;
@@ -537,7 +576,31 @@ void List_Dtor(list_s * const header)
     header->free     = 0;
 
     free(header->node);
-    free(header);
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int Open_File()
+{
+    log_file = fopen("graphics/graph.html", "w");
+    if (log_file == nullptr)
+    {
+        fprintf(stderr, "Failed openning graph.html in function %s\n", __PRETTY_FUNCTION__);
+        return File_Error;
+    }
+    return No_Error;
+}
+
+//---------------------------------------------------------------------------------------------//
+
+int Close_File()
+{
+    if (fclose(log_file) == EOF)
+    {
+        fprintf(stderr, "Failed closing graph.html in function %s\n", __PRETTY_FUNCTION__);
+        return File_Error;
+    }
+    return No_Error;
 }
 
 //---------------------------------------------------------------------------------------------//
